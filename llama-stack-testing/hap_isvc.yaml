@@ -23,3 +23,14 @@ spec:
       storage:
         key: aws-connection-minio-data-connection-guardrails-hap
         path: granite-guardian-hap-38m
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: hap-route
+spec:
+  to:
+    kind: Service
+    name: guardrails-detector-ibm-hap-predictor
+  port:
+    targetPort: http

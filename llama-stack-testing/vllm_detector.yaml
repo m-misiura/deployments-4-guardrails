@@ -8,7 +8,7 @@ spec:
   volumeMode: Filesystem
   resources:
     requests:
-      storage: 150Gi
+      storage: 80Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -78,11 +78,11 @@ spec:
           resources:
             limits:
               cpu: '1'
-              memory: 12Gi
+              memory: 10Gi
               nvidia.com/gpu: '1'
             requests:
               cpu: '1'
-              memory: 12Gi
+              memory: 10Gi
               nvidia.com/gpu: '1'
           env:
             - name: MODEL_NAME
