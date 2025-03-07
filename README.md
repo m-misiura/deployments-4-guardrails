@@ -24,3 +24,5 @@ The following operators are available on the cluster:
 - Red Hat Service Mesh (2.6.5-0)
 
 The Open Data Hub, can be initialised with the default DSC Initialization and Data Science Cluster
+
+Note that if you are using Open Data Hub operator with a higher version, you may have to remove the  `serviceAccountName` from the relevant configuration files
