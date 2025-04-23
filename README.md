@@ -1,9 +1,9 @@
 # Deploying orchestrator and detectors on Openshift
 
-Run the following command in a newly created namespace to deploy the orchestrator and detectors used to test the llama-stack
+Run the following command in a newly created namespace to deploy the orchestrator and detectors used to test the llama-stack (ensure that the script is executable), by e.g. running `chmod +x ./llama-stack-testing/deploy.sh`:
 
 ```bash
-oc apply -k llama-stack-testing
+./llama-stack-testing/deploy.sh   
 ```
 
 To remove the orchestrator and detectors, run the following command
