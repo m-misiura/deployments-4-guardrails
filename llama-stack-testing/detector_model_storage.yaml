@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio-guardrails-hap
+  name: minio-storage-guardrail-detectors
 spec:
   ports:
     - name: minio-client-port
@@ -9,12 +9,12 @@ spec:
       protocol: TCP
       targetPort: 9000
   selector:
-    app: minio-guardrails-hap
+    app: minio-storage-guardrail-detectors
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: guardrails-models-claim-hap
+  name: minio-storage-guardrail-detectors-claim
 spec:
   accessModes:
     - ReadWriteOnce
@@ -22,30 +22,30 @@ spec:
   # storageClassName: gp3-csi
   resources:
     requests:
-      storage: 5Gi
+      storage: 10Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: guardrails-container-deployment-hap # <--- change this
+  name: minio-storage-guardrail-detectors # <--- change this
 labels:
-    app: minio-guardrails-hap # <--- change this to match label on the pod
+    app: minio-storage-guardrail-detectors # <--- change this to match label on the pod
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: minio-guardrails-hap  # <--- change this to match label on the pod
+      app: minio-storage-guardrail-detectors  # <--- change this to match label on the pod
   template: # => from here down copy and paste the pods metadata: and spec: sections
     metadata:
       labels:
-        app: minio-guardrails-hap
+        app: minio-storage-guardrail-detectors
         maistra.io/expose-route: 'true'
-      name: minio-guardrails-hap
+      name: minio-storage-guardrail-detectors
     spec:
       volumes:
       - name: model-volume
         persistentVolumeClaim:
-          claimName: guardrails-models-claim-hap
+          claimName: minio-storage-guardrail-detectors-claim
       initContainers:
         - name: download-model
           image: quay.io/rgeada/llm_downloader:latest
@@ -55,10 +55,17 @@ spec:
             - bash
             - -c
             - |
-              model="ibm-granite/granite-guardian-hap-38m"
-              # model="microsoft/Phi-3-mini-4k-instruct"
-              echo "starting download"
-              /tmp/venv/bin/huggingface-cli download $model --local-dir /mnt/models/huggingface/$(basename $model)
+              models=(
+                ibm-granite/granite-guardian-hap-38m
+                ibm-granite/granite-guardian-3.1-2b
+              )
+              echo "Starting download"
+              mkdir /mnt/models/llms/
+              for model in "${models[@]}"; do
+                echo "Downloading $model"
+                /tmp/venv/bin/huggingface-cli download $model --local-dir /mnt/models/huggingface/$(basename $model)
+              done
+              
               echo "Done!"
           resources:
             limits:
@@ -77,7 +84,7 @@ spec:
             - name: MINIO_SECRET_KEY
               value: THESECRETKEY
           image: quay.io/trustyai/modelmesh-minio-examples:latest
-          name: minio-guardrails-hap
+          name: minio
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -92,18 +99,18 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: aws-connection-minio-data-connection-guardrails-hap
+  name: aws-connection-minio-data-connection-detector-models
   labels:
     opendatahub.io/dashboard: 'true'
     opendatahub.io/managed: 'true'
   annotations:
     opendatahub.io/connection-type: s3
-    openshift.io/display-name: Minio Data Connection Guardrails HAP
-data:
-  AWS_ACCESS_KEY_ID: VEhFQUNDRVNTS0VZ
-  AWS_DEFAULT_REGION: dXMtc291dGg=
-  AWS_S3_BUCKET: aHVnZ2luZ2ZhY2U=
-  AWS_S3_ENDPOINT: aHR0cDovL21pbmlvLWd1YXJkcmFpbHMtaGFwOjkwMDA=
-  AWS_SECRET_ACCESS_KEY: VEhFU0VDUkVUS0VZ
+    openshift.io/display-name: Minio Data Connection - Guardrail Detector Models
+data: # these are just base64 encodings
+  AWS_ACCESS_KEY_ID: VEhFQUNDRVNTS0VZ #THEACCESSKEY
+  AWS_DEFAULT_REGION: dXMtc291dGg= #us-south
+  AWS_S3_BUCKET: aHVnZ2luZ2ZhY2U= #huggingface
+  AWS_S3_ENDPOINT: aHR0cDovL21pbmlvLXN0b3JhZ2UtZ3VhcmRyYWlsLWRldGVjdG9yczo5MDAw #http://minio-storage-guardrail-detectors:9000
+  AWS_SECRET_ACCESS_KEY: VEhFU0VDUkVUS0VZ #THESECRETKEY
 type: Opaque
 
